@@ -1,0 +1,161 @@
+<!--功能：
+将树的子菜单移动到右侧
+移动到右侧之后可以删除掉移动的菜单
+也可以将右侧的内容设为组长或者取消组长
+将设置为组长的状态提交到后端-->
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>ztree</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<link rel="stylesheet" type="text/css" href="ztree_v3/css/zTreeStyle/zTreeStyle.css" />
+		<link rel="stylesheet" type="text/css" href="ztree_v3/ztree_custom.css" />
+		<style>
+			li {
+				list-style-type: none;
+			}
+			
+			.ztree {
+				margin: 0;
+				padding: 5px;
+				color: #333;
+				width: 232px;
+				height: 259px;
+				border: 1px solid #000;
+			}
+			
+			#boxRight {
+				border: 1px solid #000000;
+				width: 200px;
+				height: 259px;
+				position: absolute;
+				top: -7px;
+				left: 308px;
+			}
+			
+			#toRight {
+				position: absolute;
+				top: 120px;
+				left: 256px;
+			}
+			
+			.del {
+				color: red;
+			}
+			
+			.group {
+				color: red;
+			}
+		</style>
+
+		<script src="js/jquery-2.1.1.min.js"></script>
+		<script src="ztree_v3/js/jquery.ztree.core-3.5.min.js"></script>
+		<script src="ztree_v3/js/jquery.ztree.excheck-3.5.min.js"></script>
+		<script src="ztree_v3/js/jquery.ztree.exedit-3.5.min.js"></script>
+
+	</head>
+
+	<body>
+		<ul id="zTree" class="ztree">
+		</ul>
+
+		<button id="toRight">》》</button>
+		<li class="shuttleBox near">
+			<ul id="boxRight">
+				<!--<span  class="del">删除</span>马可波罗<span  class="group">设为组长</span>-->
+			</ul>
+		</li>
+		<button id="btn" type="submit">提交</button>
+	</body>
+	<script type="text/javascript">
+		//树形菜单
+		var zTreeObj; //定义ztree对象
+		initTree(); //初始化ztree
+		var setting = {
+			check: {
+				enable: true,
+				chkStyle: "checkbox",
+				chkboxType: {
+					"Y": "s",
+					"N": "s"
+				}
+			},
+			view: {
+				selectedMulti: true,
+				showLine: false
+			},
+			data: {
+				key: {
+					name: "name"
+				},
+				simpleData: {
+					enable: true,
+					pIdKey: "pId",
+				}
+			},
+
+		};
+		//请求数据
+		function initTree() {
+			$.get("data.json", function(data) {
+				console.log(JSON.stringify(data));
+				zTreeObj = $.fn.zTree.init($("#zTree"), setting, data);
+				zTreeObj.expandAll(true);
+			});
+		}
+
+		//穿梭框左侧选中
+		$("#zTree").on('click', 'li.level1', function() {
+			if($(this).hasClass('shuttleAct')) {
+				$(this).removeClass('shuttleAct');
+			} else {
+				$(this).addClass('shuttleAct');
+			}
+		});
+
+		//向右移动
+		$("#toRight").click(function() {
+			var html = '';
+			if($("#zTree .shuttleAct").length == 0) return false;
+			$('span.checkbox_true_full').closest('li').each(function() {
+
+				html += '<li>';
+				html += '<span  class="del" >删除</span><span class="name">' + $(this).text() + '</span><span  class="group">设为组长</span>';
+				html += '</li>';
+			})
+
+			$('span.checkbox_true_full').closest('li').remove();
+
+			$('#boxRight ').append(html)
+			$('.del').click(function() {
+				$(this).closest('li').remove();
+			})
+
+			$('.group').click(function() {
+
+				$(this).text() === '设为组长' ? $(this).text('取消组长') : $(this).text('设为组长')
+			})
+			//$('span.checkbox_true_full').closest('li').appendTo("#boxRight")
+			// $("#zTree").find('.shuttleAct').appendTo("#boxRight");
+			$("#boxRight li").removeClass('shuttleAct');
+
+		});
+		
+		//提交所选中的状态，提交给后端
+		$("#btn").click(function() {
+			var params = {
+				name: $(".group:contains('取消组长')").prev('.name').text()
+			}
+			alert(JSON.stringify(params))
+			$.ajax({
+				url: basePath + "/patrol",
+				contentType: 'application/json',
+				data: JSON.stringify(params),
+				type: "POST",
+				success: function(data) {
+				}
+			});
+		})
+	</script>
+</html>
